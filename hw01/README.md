@@ -1,4 +1,5 @@
 # HW01
+
 ## Requirements
 
 `cmake >= 2.8`
@@ -11,7 +12,6 @@
 2. Binarize image nicely  (use possible filters, blur, morpho, etc..).
 3. Extract contours.
 4. Extract centroids.
-
 5. Compute BOF (Boundary Object Function).
 6. Normalize size and scale of BOF 180 elements distance: [0 to 1.0].
 7. Create a Dataset with all shapes /save to file to plot.
@@ -21,13 +21,12 @@
 
 ## Results
 
-The next image show the original RGB image with contours (red), centroids (greed dot), and class number (blue text).
+The next image show the original RGB image with contours (red), centroids (green dot), and class number (blue text).
 
 ![](../images/all_shapes_color_processed.png)
 
 
-
-To find the BOF class to which the test image belongs,  `main.cpp`computes the correlation coefficient for each BOF in the dataset and the BOF of the tested image.
+To find the BOF class to which the test image belongs, `main.cpp`computes the correlation coefficient for each BOF in the dataset and the BOF of the tested image.
 
 ![](../images/bof_correlations.png)
 
