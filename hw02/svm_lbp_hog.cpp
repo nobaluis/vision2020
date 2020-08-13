@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Computer Vision 3D (2020) - Assignment 02
  * @file main.cpp
  * @author Luis Castillo <luis.castillo@cinvestav.mx>
@@ -12,37 +12,57 @@
 #include <opencv2/objdetect.hpp>
 #include <opencv2/ml.hpp>
 
+#include "LBP.hpp"
+#include "LBPGPU.cuh"
 
 const std::string base_path = "/home/luisc/Git/vision2020/hw02/db";
 
-/**
- * @brief pushHog Compute de hog descriptor for given Mat image and store in a Mat
- * @param hogDesc The HOGDescriptor object
- * @param desc Vector to store the HOG descriptor
- * @param srcImg The image in a Mat object
- * @param dest The Mat where the descriptor will be stored
- */
-void pushHog(cv::HOGDescriptor& hogDesc, std::vector<float> desc, cv::Mat& srcImg, cv::Mat& dest){
-    hogDesc.compute(srcImg, desc);
-    dest.push_back(cv::Mat(desc, true).reshape(1,1));
+
+
+void computeHogDesc(cv::HOGDescriptor& hogObj, std::vector<float>& desc, cv::Mat& srcImg){
+    hogObj.compute(srcImg, desc);
 }
 
-/**
- * @brief computeHog Compute HOG descriptor for given filename and store in a Mat
- * @param hogDesc The HOGDescriptor object
- * @param desc Vector to store the HOG descriptor
- * @param srcFile The filename path where is the image
- * @param srcImg The Mat object for store the image
- * @param dest The Mat where the descriptors will be stored
- * @param augmented If this is true, the image is fliped to get X2 descriptors
- */
-void computeHog(cv::HOGDescriptor& hogDesc, std::vector<float> desc,
-                const cv::String& srcFile, cv::Mat& srcImg, cv::Mat& dest, bool augmented){
+void computeLbpDesc(lbp::LBP& lbpObj, std::vector<float>& desc, std::vector<double>& hist,
+                    cv::Mat& srcImg){
+    lbpObj.calcLBP(srcImg, 1, true);  // compute LBP
+    hist = lbpObj.calcHist().getHist(true); // compute the histogram
+    desc.assign(hist.begin(), hist.end());  // cast to float
+}
+
+
+void computeDesc(cv::HOGDescriptor& hogObj, lbp::LBP& lbpObj,
+                 std::vector<float>& hogDesc, std::vector<float>& lbpDesc, std::vector<double>& hist,
+                 cv::Mat& srcImg, cv::Mat& srcImgF, cv::Mat& dest){
+    // 1. Compute the HOG descriptor
+    computeHogDesc(hogObj, hogDesc, srcImg);
+
+    // test - normalize hogDesc
+    cv::normalize(hogDesc, hogDesc);
+
+
+    // 2. Compute the LBP-HF descriptor
+    computeLbpDesc(lbpObj, lbpDesc, hist, srcImgF);
+    // 3. Concatenate vectors
+    std::vector<float> fullDesc;
+    std::copy(hogDesc.begin(), hogDesc.end(), back_inserter(fullDesc));
+    std::copy(lbpDesc.begin(), lbpDesc.end(), back_inserter(fullDesc));
+    // 4. Push to samples data
+    dest.push_back(cv::Mat(fullDesc, true).reshape(1,1));
+}
+
+
+void processSample(cv::HOGDescriptor& hogObj, lbp::LBP& lbpObj,
+                   std::vector<float>& hogDesc, std::vector<float>& lbpDesc, std::vector<double>& hist,
+                   cv::Mat& srcImg, cv::Mat& srcImgF, cv::Mat& dest,
+                   const cv::String& srcFile, bool augmented){
     srcImg = cv::imread(srcFile, cv::IMREAD_GRAYSCALE);
-    pushHog(hogDesc, desc, srcImg, dest);
+    srcImg.convertTo(srcImgF, CV_64F);
+    computeDesc(hogObj, lbpObj, hogDesc, lbpDesc, hist, srcImg, srcImgF, dest);
     if(augmented){
         cv::flip(srcImg, srcImg, 1);
-        pushHog(hogDesc, desc, srcImg, dest);
+        srcImg.convertTo(srcImgF, CV_64F);
+        computeDesc(hogObj, lbpObj, hogDesc, lbpDesc, hist, srcImg, srcImgF, dest);
     }
 }
 
@@ -51,16 +71,19 @@ int main(){
     // PRELIMINARIES
 
     // 1. Declare the variables that will be used in the program
-    cv::Mat img, samples, test_samples, predictions;
-    std::vector<float> descriptor;
+    std::vector<double> lbp_hist;
+    std::vector<float> lbp_desc, hog_desc;
+    cv::Mat img, img_f, samples, test_samples, predictions;
     std::vector<cv::String> positives, negatives, positives_test, negatives_test;
 
-    // 2. Create the HOG descriptor object
-    cv::HOGDescriptor hog(cv::Size(64, 128),        // win_size (64, 128)
-                              cv::Size(8, 8),       // block_size  (16, 16)
-                              cv::Size(4, 4),       // block_stride (8, 8)
-                              cv::Size(4, 4), 9);   // cell_size, nbins (8, 8), 9
+    // 2. Create the LPB obj
+    lbp::LBP lbp(16, lbp::LBP_MAPPING_HF);
 
+    // 3. Create the HOGDesc obj
+    cv::HOGDescriptor hog(cv::Size(64, 128),        // win_size
+                              cv::Size(8, 8),       // block_size
+                              cv::Size(4, 4),       // block_stride
+                              cv::Size(4, 4), 9);   // cell_size, nbins
 
     // PART I - Process the trainning data
 
@@ -68,14 +91,26 @@ int main(){
     cv::glob(base_path+"/pos/training/*.png", positives, false);
     cv::glob(base_path+"/neg/training/*.png", negatives, false);
 
+
+    /*processSample(hog, lbp, hog_desc,
+                  lbp_desc, lbp_hist,
+                  img, img_f, test_samples,
+                  positives[0], false);*/
+
     // 2. Generate the samples with HOG descriptors
     // 2.1. Compute positives descriptors (with data augmentation)
     for(auto file : positives){
-        computeHog(hog, descriptor, file, img, samples, true);
+        processSample(hog, lbp, hog_desc,
+                      lbp_desc, lbp_hist,
+                      img, img_f, samples,
+                      file, true);
     }
     // 2.2. Compute negatives descriptors
     for(auto file : negatives){
-        computeHog(hog, descriptor, file, img, samples, false);
+        processSample(hog, lbp, hog_desc,
+                      lbp_desc, lbp_hist,
+                      img, img_f, samples,
+                      file, false);
     }
 
     // 3. Create the labels
@@ -106,11 +141,17 @@ int main(){
     // 2. Generate the testing samples with HOG descriptors
     // 2.1. Compute HOG descriptors for the positives
     for(auto file: positives_test){
-        computeHog(hog, descriptor, file, img, test_samples, false);
+        processSample(hog, lbp, hog_desc,
+                      lbp_desc, lbp_hist,
+                      img, img_f, test_samples,
+                      file, false);
     }
     // 2.2. Compute HOG descriptors for the negatives
     for(auto file: negatives_test){
-        computeHog(hog, descriptor, file, img, test_samples, false);
+        processSample(hog, lbp, hog_desc,
+                      lbp_desc, lbp_hist,
+                      img, img_f, test_samples,
+                      file, false);
     }
 
     // 3. Do the predictions
@@ -135,16 +176,15 @@ int main(){
         }
     }
 
-    // 5. compute accuracy
     float pos_acc, neg_acc, acc;
     pos_acc = (positives.size() * 2 - pos_fails) / float(positives.size() * 2);
     neg_acc = (negatives.size() - neg_fails) / float(negatives.size());
     acc = (samples.rows - pos_fails - neg_fails) / float(samples.rows);
 
-    printf("HOG SVM Pedestrians Detector \n");
+    printf("LBP+HOG SVM Pedestrians Detector\n");
     printf("Positives accuracy = %.5f\n", pos_acc);
     printf("Negatives accuracy = %.5f\n", neg_acc);
     printf("Total accuracy = %.5f\n", acc);
 
-	return 0;
+    return 0;
 }
