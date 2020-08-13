@@ -135,7 +135,7 @@ int main(){
         }
     }
 
-    // 5. compute accuracy
+    // 5. Compute accuracy
     float pos_acc, neg_acc, acc;
     pos_acc = (positives.size() * 2 - pos_fails) / float(positives.size() * 2);
     neg_acc = (negatives.size() - neg_fails) / float(negatives.size());

@@ -1,6 +1,6 @@
 ﻿/*
  * Computer Vision 3D (2020) - Assignment 02
- * @file main.cpp
+ * @file svm_lbp_hog.cpp
  * @author Luis Castillo <luis.castillo@cinvestav.mx>
  * @version 1.0
 */
@@ -15,14 +15,26 @@
 #include "LBP.hpp"
 #include "LBPGPU.cuh"
 
+// Dataset location
 const std::string base_path = "/home/luisc/Git/vision2020/hw02/db";
 
-
-
+/**
+ * @brief computeHogDesc Computes the HOG descriptor
+ * @param hogObj The HOG object
+ * @param desc The descriptor vector
+ * @param srcImg The source Mat image
+ */
 void computeHogDesc(cv::HOGDescriptor& hogObj, std::vector<float>& desc, cv::Mat& srcImg){
     hogObj.compute(srcImg, desc);
 }
 
+/**
+ * @brief computeLbpDesc Computes the LBP-HF descriptro
+ * @param lbpObj The LBP object
+ * @param desc The descriptor vector
+ * @param hist The LBP histogram vector
+ * @param srcImg The source Mat image (float)
+ */
 void computeLbpDesc(lbp::LBP& lbpObj, std::vector<float>& desc, std::vector<double>& hist,
                     cv::Mat& srcImg){
     lbpObj.calcLBP(srcImg, 1, true);  // compute LBP
@@ -31,6 +43,17 @@ void computeLbpDesc(lbp::LBP& lbpObj, std::vector<float>& desc, std::vector<doub
 }
 
 
+/**
+ * @brief computeDesc Computes the HOG+LBP descriptor and add to a Mat
+ * @param hogObj The HOG object
+ * @param lbpObj The LBP object
+ * @param hogDesc The HOG descriptor vector
+ * @param lbpDesc The LBP desciptor vector
+ * @param hist The LBP histogram vector
+ * @param srcImg The source Mat image
+ * @param srcImgF The source Mat iamge (float)
+ * @param dest Destination Mat for the samples
+ */
 void computeDesc(cv::HOGDescriptor& hogObj, lbp::LBP& lbpObj,
                  std::vector<float>& hogDesc, std::vector<float>& lbpDesc, std::vector<double>& hist,
                  cv::Mat& srcImg, cv::Mat& srcImgF, cv::Mat& dest){
@@ -51,7 +74,19 @@ void computeDesc(cv::HOGDescriptor& hogObj, lbp::LBP& lbpObj,
     dest.push_back(cv::Mat(fullDesc, true).reshape(1,1));
 }
 
-
+/**
+ * @brief processSample Process: image file -> HOG+LBP descriptor -> samples Mat
+ * @param hogObj The HOG object
+ * @param lbpObj The LBP object
+ * @param hogDesc The HOG descriptor vector
+ * @param lbpDesc The LBP desciptor vector
+ * @param hist The LBP histogram vector
+ * @param srcImg The source Mat image
+ * @param srcImgF The source Mat iamge (float)
+ * @param dest Destination Mat for the samples
+ * @param srcFile Image filename
+ * @param augmented If is true, generates x2 descriptors with flip og image
+ */
 void processSample(cv::HOGDescriptor& hogObj, lbp::LBP& lbpObj,
                    std::vector<float>& hogDesc, std::vector<float>& lbpDesc, std::vector<double>& hist,
                    cv::Mat& srcImg, cv::Mat& srcImgF, cv::Mat& dest,
@@ -90,12 +125,6 @@ int main(){
     // 1. Read all files in the training directory
     cv::glob(base_path+"/pos/training/*.png", positives, false);
     cv::glob(base_path+"/neg/training/*.png", negatives, false);
-
-
-    /*processSample(hog, lbp, hog_desc,
-                  lbp_desc, lbp_hist,
-                  img, img_f, test_samples,
-                  positives[0], false);*/
 
     // 2. Generate the samples with HOG descriptors
     // 2.1. Compute positives descriptors (with data augmentation)
@@ -176,6 +205,7 @@ int main(){
         }
     }
 
+    //5. Compute accuracy
     float pos_acc, neg_acc, acc;
     pos_acc = (positives.size() * 2 - pos_fails) / float(positives.size() * 2);
     neg_acc = (negatives.size() - neg_fails) / float(negatives.size());
