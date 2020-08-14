@@ -56,10 +56,10 @@ int main(){
     std::vector<cv::String> positives, negatives, positives_test, negatives_test;
 
     // 2. Create the HOG descriptor object
-    cv::HOGDescriptor hog(cv::Size(64, 128),        // win_size (64, 128)
-                              cv::Size(8, 8),       // block_size  (16, 16)
-                              cv::Size(4, 4),       // block_stride (8, 8)
-                              cv::Size(4, 4), 9);   // cell_size, nbins (8, 8), 9
+    cv::HOGDescriptor hog(cv::Size(64, 128),        // win_size
+                              cv::Size(8, 8),       // block_size
+                              cv::Size(4, 4),       // block_stride
+                              cv::Size(4, 4), 9);   // cell_size, nbins
 
 
     // PART I - Process the trainning data

@@ -59,11 +59,7 @@ void computeDesc(cv::HOGDescriptor& hogObj, lbp::LBP& lbpObj,
                  cv::Mat& srcImg, cv::Mat& srcImgF, cv::Mat& dest){
     // 1. Compute the HOG descriptor
     computeHogDesc(hogObj, hogDesc, srcImg);
-
-    // test - normalize hogDesc
     cv::normalize(hogDesc, hogDesc);
-
-
     // 2. Compute the LBP-HF descriptor
     computeLbpDesc(lbpObj, lbpDesc, hist, srcImgF);
     // 3. Concatenate vectors

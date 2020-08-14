@@ -34,7 +34,7 @@ void saveRandomBB(const std::string& file_name, int samples, const std::string& 
         // extract ROI
         cv::Mat roi = img(bb);
 
-        // resize
+        // resizezSe
         cv::Mat roi_norm;
         cv::resize(roi, roi_norm, cv::Size(64, 128));
 

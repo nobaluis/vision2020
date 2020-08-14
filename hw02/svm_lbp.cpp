@@ -63,7 +63,7 @@ int main(){
     std::vector<cv::String> positives, negatives, positives_test, negatives_test;
 
     // 2. Create the LBP object
-    lbp::LBP lbp(8, lbp::LBP_MAPPING_HF);
+    lbp::LBP lbp(8, lbp::LBP_MAPPING_HF);  // (none,16) = 65536, (HF,16) = 138
 
     // PART I - Process the trainning data    
 
@@ -80,8 +80,6 @@ int main(){
     for(auto file : negatives){
         computeLbp(lbp, lbp_hist, descriptor, file, img, samples, false);
     }
-
-    std::cout << "samples size: " << samples.rows << " x " << samples.cols << '\n';
 
     // 3. Create the labels
     cv::Mat labels(samples.rows, 1, CV_32SC1);

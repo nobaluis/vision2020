@@ -19,7 +19,6 @@ void savePedestrians(const std::string& city, int img_no, const std::string& tar
     char number[5];
     std::sprintf(number, "%05d", img_no);
     std::string src_path = base_path + "/src/pedestrians/" + city + "Ped" + number;
-    //std::string img_path = src_path + ".png";
     // Read the image
     cv::Mat img = cv::imread(src_path+".png");
     // Read the bounding box (bb) pedestrian coordinates
