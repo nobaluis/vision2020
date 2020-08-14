@@ -108,13 +108,13 @@ int main(){
     std::vector<cv::String> positives, negatives, positives_test, negatives_test;
 
     // 2. Create the LPB obj
-    lbp::LBP lbp(16, lbp::LBP_MAPPING_HF);
+    lbp::LBP lbp(8, lbp::LBP_MAPPING_HF);
 
     // 3. Create the HOGDesc obj
     cv::HOGDescriptor hog(cv::Size(64, 128),        // win_size
-                              cv::Size(8, 8),       // block_size
-                              cv::Size(4, 4),       // block_stride
-                              cv::Size(4, 4), 9);   // cell_size, nbins
+                              cv::Size(16, 16),       // block_size
+                              cv::Size(8, 8),       // block_stride
+                              cv::Size(8, 8), 9);   // cell_size, nbins
 
     // PART I - Process the trainning data
 
@@ -203,9 +203,9 @@ int main(){
 
     //5. Compute accuracy
     float pos_acc, neg_acc, acc;
-    pos_acc = (positives.size() * 2 - pos_fails) / float(positives.size() * 2);
-    neg_acc = (negatives.size() - neg_fails) / float(negatives.size());
-    acc = (samples.rows - pos_fails - neg_fails) / float(samples.rows);
+    pos_acc = (positives_test.size() * 2 - pos_fails) / float(positives_test.size() * 2);
+    neg_acc = (negatives_test.size() - neg_fails) / float(negatives_test.size());
+    acc = (test_samples.rows - pos_fails - neg_fails) / float(test_samples.rows);
 
     printf("LBP+HOG SVM Pedestrians Detector\n");
     printf("Positives accuracy = %.5f\n", pos_acc);

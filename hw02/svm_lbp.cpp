@@ -63,7 +63,7 @@ int main(){
     std::vector<cv::String> positives, negatives, positives_test, negatives_test;
 
     // 2. Create the LBP object
-    lbp::LBP lbp(8, lbp::LBP_MAPPING_HF);  // (none,16) = 65536, (HF,16) = 138
+    lbp::LBP lbp(16, lbp::LBP_MAPPING_HF);
 
     // PART I - Process the trainning data    
 
@@ -139,9 +139,9 @@ int main(){
 
     //5. Compute accuracy
     float pos_acc, neg_acc, acc;
-    pos_acc = (positives.size() * 2 - pos_fails) / float(positives.size() * 2);
-    neg_acc = (negatives.size() - neg_fails) / float(negatives.size());
-    acc = (samples.rows - pos_fails - neg_fails) / float(samples.rows);
+    pos_acc = (positives_test.size() * 2 - pos_fails) / float(positives_test.size() * 2);
+    neg_acc = (negatives_test.size() - neg_fails) / float(negatives_test.size());
+    acc = (test_samples.rows - pos_fails - neg_fails) / float(test_samples.rows);
 
     printf("LBP SVM Pedestrians Detector\n");
     printf("Positives accuracy = %.5f\n", pos_acc);
